@@ -1,0 +1,106 @@
+ingredient,store,price_per_unit,unit
+rice,Walmart,1.2,grams
+nori,Asian Market,0.5,sheets
+raw salmon,Fish Market,2.5,grams
+avocado,Walmart,0.8,grams
+cucumber,Walmart,0.3,grams
+miso paste,Asian Market,0.6,grams
+tofu,Asian Market,1.0,grams
+seaweed,Asian Market,0.4,grams
+green onion,Walmart,0.2,grams
+water,Walmart,0.0,ml
+vegetables,Walmart,0.8,grams
+flour,Walmart,0.5,grams
+egg,Walmart,0.2,units
+oil,Walmart,0.03,ml
+chicken,Walmart,1.8,grams
+soy sauce,Asian Market,0.6,ml
+sugar,Walmart,0.02,grams
+mirin,Asian Market,0.7,ml
+ginger,Walmart,0.4,grams
+noodles,Walmart,0.6,grams
+bacon,Walmart,1.0,grams
+pork,Walmart,1.5,grams
+cabbage,Walmart,0.5,grams
+spinach,Walmart,0.8,grams
+chickpeas,Walmart,1.0,grams
+onion,Walmart,0.3,grams
+tomato,Walmart,0.4,grams
+yogurt,Walmart,0.5,ml
+potato,Walmart,0.3,grams
+spices,Walmart,0.05,grams
+lemon,Walmart,0.3,grams
+parsley,Walmart,0.2,grams
+tahini,Middle Eastern Market,1.5,grams
+olive oil,Middle Eastern Market,0.05,ml
+phyllo,Middle Eastern Market,1.0,sheets
+pita bread,Middle Eastern Market,0.5,grams
+lentils,Walmart,0.8,grams
+grape leaves,Middle Eastern Market,1.2,grams
+cheese,Walmart,1.0,grams
+yeast,Walmart,0.1,grams
+duck,Walmart,2.5,grams
+pineapple,Walmart,0.6,grams
+bell pepper,Walmart,0.4,grams
+feta cheese,Walmart,1.2,grams
+olives,Walmart,1.0,grams
+oregano,Walmart,0.05,grams
+tzatziki sauce,Walmart,0.6,ml
+beef,Walmart,2.0,grams
+corn tortillas,Walmart,0.5,grams
+black beans,Walmart,0.8,grams
+cilantro,Walmart,0.2,grams
+lime,Walmart,0.3,grams
+jalapeno,Walmart,0.4,grams
+avocado oil,Walmart,0.06,ml
+crema,Walmart,0.5,ml
+tomatillo,Walmart,0.4,grams
+chili powder,Walmart,0.05,grams
+chicken breast,Walmart,1.8,grams
+rice noodles,Walmart,0.7,grams
+coconut milk,Walmart,0.8,ml
+lemongrass,Asian Market,0.5,grams
+fish sauce,Asian Market,0.6,ml
+thai basil,Asian Market,0.3,grams
+mint,Walmart,0.2,grams
+shallot,Walmart,0.3,grams
+pasta,Walmart,0.6,grams
+basil,Walmart,0.2,grams
+parmesan,Walmart,1.5,grams
+tomato paste,Walmart,0.4,grams
+mozzarella,Walmart,1.2,grams
+prosciutto,Walmart,2.0,grams
+white wine,Walmart,1.0,ml
+cream,Walmart,0.8,ml
+mushrooms,Walmart,0.6,grams
+leek,Walmart,0.5,grams
+thyme,Walmart,0.05,grams
+ratatouille vegetables,Walmart,0.9,grams
+chili,Walmart,0.05,grams
+garlic,Walmart,0.2,grams
+turmeric,Walmart,0.05,grams
+coriander,Walmart,0.05,grams
+cumin,Walmart,0.05,grams
+cardamom,Walmart,0.05,grams
+coconut,Walmart,0.5,grams
+paneer,Walmart,1.0,grams
+ghee,Walmart,0.08,grams
+bamboo shoots,Asian Market,0.6,grams
+water chestnuts,Asian Market,0.7,grams
+sesame oil,Asian Market,0.06,ml
+scallions,Walmart,0.2,grams
+szechuan pepper,Asian Market,0.05,grams
+hoisin sauce,Asian Market,0.6,ml
+lemongrass paste,Asian Market,0.5,grams
+tamarind paste,Asian Market,0.6,grams
+coriander leaves,Walmart,0.2,grams
+cashews,Walmart,1.0,grams
+peanuts,Walmart,0.8,grams
+red curry paste,Asian Market,0.6,grams
+green curry paste,Asian Market,0.6,grams
+thai eggplant,Asian Market,0.5,grams
+kaffir lime leaves,Asian Market,0.05,grams
+bamboo rice,Asian Market,0.7,grams
+prawn,Fish Market,2.0,grams
+clam,Fish Market,1.8,grams
+scallop,Fish Market,2.2,grams
