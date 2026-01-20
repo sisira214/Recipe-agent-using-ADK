@@ -1,4 +1,4 @@
-from google.adk.models.lite_llm import LiteLlm
+c
 from google.adk.agents.llm_agent import Agent
 
 import warnings
@@ -17,6 +17,9 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # ---------------- CONFIG ----------------
 
 RECIPE_CSV_PATH = "C:/Users/sashi/OneDrive/Documents/langgraphProjects/a2aRecipie/Data/recipies.csv"
+INGREDIENTS_CSV_PATH = "C:/Users/sashi/OneDrive/Documents/langgraphProjects/a2aRecipie/Data/ingredients.csv"
+
+
 
 FRIDGE_ITEMS = {
     "chicken", "rice", "vegetables", "pasta", "cheese", "eggs"
@@ -264,50 +267,194 @@ Output only the cooking steps.
 {steps}
 """
 
-'''
-def generate_cooking_steps_llm(state: dict | None = None, **kwargs):
-    recipe = state.get("selected_recipe")
-    if not recipe:
+# ---------------- AGENT 2 DEFINITION ----------------
+# After getting the ingredients that are not present in fridge we can call another agent to suggest nearby stores to buy those ingredients from. I have ingredients data in 
+# form of csv file which contains the following columns: ingredient,store,price_per_unit,unit example data is rice,Walmart,1.2,grams
+
+def load_ingredient_prices():
+    return pd.read_csv(INGREDIENTS_CSV_PATH).to_dict(orient="records")
+
+
+
+
+# ---------------- AGENT 2 TOOL ----------------
+
+def add_missing_ingredients_to_cart(state: dict | None = None, **kwargs):
+    """
+    Agent 2: Market / Ingredient Purchase Agent
+
+    Input (from Agent 1):
+        state["missing_ingredients"] = [
+            {"ingredient": "rice", "quantity": "200", "unit": "grams"}
+        ]
+
+    Output:
+        state["cart"]
+        state["total_cart_cost"]
+    """
+
+    # If nothing is missing, no need to shop
+    if state is None:
+        state = {}
+
+    if state.get("missing_ingredients") is None:
+        state["missing_ingredients"] = []
+
+    if not state.get("missing_ingredients"):
+        state["cart"] = []
+        state["total_cart_cost"] = 0.0
         return state
 
-    ingredient_text = "\n".join(
-        f"- {i}: {q} {u}"
-        for i, q, u in zip(
-            recipe["ingredients"],
-            recipe["ingredient_quantities"],
-            recipe["ingredient_units"]
-        )
-    )
 
-    prompt = f"""
-Generate step-by-step cooking instructions.
+    prices = load_ingredient_prices()
 
-RULES:
-- Use ONLY listed ingredients
-- No new ingredients
-- Numbered steps
-- Indian cooking style
+    cart = []
+    total_cost = 0.0
 
-Recipe: {recipe['name']}
-Ingredients:
-{ingredient_text}
-"""
+    for item in state["missing_ingredients"]:
+        ingredient = item["ingredient"]
+        quantity = float(item["quantity"])
+        unit = item["unit"]
 
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        messages=[
-            {"role": "system", "content": "You generate cooking steps from structured data only."},
-            {"role": "user", "content": prompt}
+        matches = [
+            p for p in prices
+            if p["ingredient"] == ingredient and p["unit"] == unit
         ]
-    )
 
-    steps = completion.choices[0].message.content.strip()
+        if not matches:
+            continue
 
-    state["response"] += f"\n\nCooking Steps:\n{steps}"
+        best_option = min(matches, key=lambda x: float(x["price_per_unit"]))
+        price_per_unit = float(best_option["price_per_unit"])
+        cost = quantity * price_per_unit
+
+        cart.append({
+            "ingredient": ingredient,
+            "store": best_option["store"],
+            "quantity": quantity,
+            "unit": unit,
+            "price_per_unit": price_per_unit,
+            "cost": round(cost, 2)
+        })
+
+        total_cost += cost
+
+    state["cart"] = cart
+    state["total_cart_cost"] = round(total_cost, 2)
     return state
-'''
-# ---------------- AGENTS ----------------
+
+# ---------------- OPTIONAL SUMMARY TOOL ----------------
+
+def summarize_cart(state: dict | None = None, **kwargs):
+    """
+    Generates a human-readable cart summary.
+    """
+
+    if state is None:
+        state = {}
+
+    cart = state.get("cart", [])
+
+    if not cart:
+        state["cart_summary"] = "🛒 No ingredients need to be purchased."
+        state["total_cart_cost"] = 0.0
+        return state
+
+    total_cost = state.get("total_cart_cost", 0.0)
+
+    summary = "🛒 Ingredients added to cart:\n"
+
+    for item in cart:
+        summary += (
+            f"- {item['ingredient']} from {item['store']}: "
+            f"{item['quantity']} {item['unit']} × "
+            f"{item['price_per_unit']} = ${item['cost']}\n"
+        )
+
+    summary += f"\n💰 Total Cost: ${total_cost}"
+
+    state["cart_summary"] = summary
+    state["total_cart_cost"] = total_cost
+    return state
+
+# ---------------- AGENT 3 DEFINITION ----------------
+# Wallet Management Agent. This agent can help user manage their budget for grocery shopping based on their total cart cost from Agent 2. 
+
+# ---------------- AGENT 3: WALLET MANAGEMENT AGENT ----------------
+
+# Fixed wallet credentials
+VALID_USER_ID = "0101"
+VALID_PASSWORD = "wallet"
+
+# Initial wallet balance
+WALLET_BALANCE = 20000.0
+
+
+
+
+
+def wallet_agent(state: dict | None = None, **kwargs) -> dict:
+    """
+    Wallet Management Agent
+
+    Input (from Agent 2 / User):
+        state["total_cart_cost"]       : float
+        state["user_id"]               : str
+        state["password"]              : str
+        state["confirm_payment"]       : bool
+
+    Output:
+        state["transaction_status"]    : str
+        state["remaining_balance"]     : float (if successful)
+    """
+
+    global WALLET_BALANCE
+
+    if state is None:
+        state = {}
+
+    # Inject default credentials automatically if missing
+    if "user_id" not in state:
+        state["user_id"] = VALID_USER_ID
+    if "password" not in state:
+        state["password"] = VALID_PASSWORD
+    if "confirm_payment" not in state:
+        state["confirm_payment"] = True
+
+    total_cost = state.get("total_cart_cost", 0.0)
+    user_id = state["user_id"]
+    password = state["password"]
+    confirm = state["confirm_payment"]
+
+    # No cart cost
+    if total_cost <= 0.0:
+        state["transaction_status"] = "NO_CART"
+        return state
+
+    # Authentication check
+    if user_id != VALID_USER_ID or password != VALID_PASSWORD:
+        state["transaction_status"] = "FAILED_AUTH"
+        return state
+
+    # Payment confirmation
+    if not confirm:
+        state["transaction_status"] = "CANCELLED"
+        return state
+
+    # Check wallet balance
+    if WALLET_BALANCE < total_cost:
+        state["transaction_status"] = "INSUFFICIENT_FUNDS"
+        return state
+
+    # Deduct the amount
+    WALLET_BALANCE -= total_cost
+
+    state["transaction_status"] = "SUCCESS"
+    state["remaining_balance"] = WALLET_BALANCE
+
+    return state
+
+# ---------------- AGENTS DEFINITION ----------------
 
 llm = LiteLlm(
     model="openai/gpt-4o-mini",
@@ -358,9 +505,109 @@ Only answer recipe-related queries. Do not make up recipes or ingredients not in
 """
 )
 
-root_agent = Agent(
-    name="kitchen_root_agent",
-    model=llm,
-    sub_agents=[recipe_agent],
-    instruction="Delegate recipe queries only."
-)
+
+missing_items_toCart_agent = None
+try:
+    missing_items_toCart_agent = Agent(
+        # Using a potentially different/cheaper model for a simple task
+        model=LiteLlm(model="openai/gpt-4o-mini",api_key=os.getenv("OPENAI_API_KEY")),# Use LiteLlm to specify the model name,
+    name='missing_items_toCart_agent',
+    description="Tells the missing ingredients to shopping cart with prices",
+    instruction="""
+You are a Shopping Cart Agent. You help users add missing ingredients to their shopping cart and summarize the total cost.
+Follow these internal steps:
+1. load_ingredient_prices() - Load the ingredient prices from CSV.
+2. add_missing_ingredients_to_cart(state) - Add missing ingredients to shopping carrt with prices based on ingredient prices.
+3. summarize_cart(state) - Summarize the shopping cart with total cost.
+
+Input:
+- missing_ingredients from Recipe Agent
+
+Output:
+- cart
+- total_cart_cost
+
+
+Do not make up recipes or ingredients not in the database.The agent should use the tools in the specified order to process user requests effectively.
+""",
+    tools=[
+    load_ingredient_prices, add_missing_ingredients_to_cart, summarize_cart
+],
+    )
+    print(f"✅ Agent '{missing_items_toCart_agent.name}' created using model '{missing_items_toCart_agent.model}'.")
+except Exception as e:
+    print(f"❌ Could not create Greeting agent. Check API Key ({missing_items_toCart_agent.model}). Error: {e}")
+
+
+
+wallet_management_agent = None
+try:
+    wallet_management_agent = Agent(
+        # Using a potentially different/cheaper model for a simple task
+        model=LiteLlm(model="openai/gpt-4o-mini",api_key=os.getenv("OPENAI_API_KEY")), # Use LiteLlm to specify the model name,
+    name='rwallet_management_agent',
+    description="Allows user to manage their wallet for grocery shopping",
+    instruction="""
+You are a Wallet Management Agent. You help users to order missing items by getting the total cost from agent 2.
+Follow these internal steps:
+1. wallet_agent(state) - Manage wallet balance and process payment for the shopping cart.
+
+Input:
+- total_cart_cost from Cart Agent
+
+Authenticate user and process payment.
+
+The agent should use the tools in the specified order to process user requests effectively. 
+""",
+    tools=[
+    wallet_agent
+],
+    )
+    print(f"✅ Agent '{missing_items_toCart_agent.name}' created using model '{missing_items_toCart_agent.model}'.")
+except Exception as e:
+    print(f"❌ Could not create Greeting agent. Check API Key ({missing_items_toCart_agent.model}). Error: {e}")
+    
+
+root_agent = None
+
+if recipe_agent and missing_items_toCart_agent and wallet_management_agent:
+
+    root_agent = Agent(
+        name="kitchen_root_agent",
+        model=LiteLlm(
+            model="openai/gpt-4o-mini",
+            api_key=os.getenv("OPENAI_API_KEY")
+        ),
+        description="Coordinates recipe recommendation, shopping cart, and wallet payment agents",
+        instruction="""
+You are the Kitchen Root Orchestrator Agent.
+
+Delegate tasks only.
+When delegating, always pass user input as state['input'] to the sub-agent.
+After sub-agents finish, summarize the result for the user.
+
+Behavior:
+- If user asks for a recipe → delegate to recipe_recommender_agent
+- If missing ingredients are found → delegate to missing_items_toCart_agent
+- If total cart cost is computed → delegate to wallet_management_agent
+
+You MUST delegate tasks to sub-agents.
+Do not perform tool logic yourself.
+""",
+        sub_agents=[
+            recipe_agent,
+            missing_items_toCart_agent,
+            wallet_management_agent
+        ]
+    )
+
+    print(
+        f"✅ Root Agent '{root_agent.name}' created with sub-agents: "
+        f"{[a.name for a in root_agent.sub_agents]}"
+    )
+
+else:
+    print("❌ Root agent creation failed — one or more sub-agents missing.")
+
+
+#I have chicken. Give me a Indian recipie
